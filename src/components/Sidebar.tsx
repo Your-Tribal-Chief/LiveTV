@@ -59,14 +59,14 @@ export default function Sidebar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search channels..."
-            className="w-full pl-9 pr-4 py-2 bg-black/40 border border-white/5 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-rose-500/50 transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-black/40 border border-white/5 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-rose-500/50 focus:ring-4 focus:ring-blue-500 transition-colors"
           />
         </div>
 
         {/* Custom M3u import trigger */}
         <button
           onClick={onOpenParser}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/40 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95 focus:ring-4 focus:outline-none focus:ring-blue-500"
           id="trigger-m3u-panel-btn"
         >
           <PlusCircle className="w-4 h-4" />
@@ -83,7 +83,7 @@ export default function Sidebar({
         {/* All choice */}
         <button
           onClick={() => onSelectCategory("all")}
-          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer focus:ring-4 focus:outline-none focus:ring-blue-500 ${
             selectedCategory === "all"
               ? "bg-rose-600 text-white font-bold shadow-lg shadow-rose-950/30"
               : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -104,7 +104,7 @@ export default function Sidebar({
           <button
             key={cat.name}
             onClick={() => onSelectCategory(cat.name)}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm transition-all cursor-pointer focus:ring-4 focus:outline-none focus:ring-blue-500 ${
               selectedCategory === cat.name
                 ? "bg-rose-600 text-white font-bold shadow-lg shadow-rose-950/30"
                 : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -130,11 +130,11 @@ export default function Sidebar({
           </span>
           <div className="flex items-center gap-3 p-2 bg-white/5 rounded-xl border border-white/5">
             <img 
-              src={activeChannel.logo} 
+              src={activeChannel.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChannel.name)}&background=random&color=fff&size=256&bold=true`} 
               alt={activeChannel.name} 
-              className="w-9 h-9 rounded-lg object-cover border border-white/10"
+              className="w-9 h-9 rounded-lg object-contain border border-white/10"
               onError={(e) => {
-                e.currentTarget.src = "https://images.unsplash.com/photo-1598257006458-087169a1f08d?w=120&q=80";
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChannel.name)}&background=random&color=fff&size=256&bold=true`;
               }}
             />
             <div className="min-w-0 flex-1">

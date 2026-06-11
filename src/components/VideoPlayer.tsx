@@ -18,25 +18,52 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hlsInstance, setHlsInstance] = useState<Hls | null>(null);
-  const [proxyToggled, setProxyToggled] = useState(false);
+  const [proxyIndex, setProxyIndex] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Compute protocol constraint flags
-  const isHttp = channel?.url.startsWith("http://");
-  const isHttpsPage = window.location.protocol === "https:";
-  const autoProxy = isHttp && isHttpsPage; // Auto proxy mixed content
-  const activeProxy = proxyToggled || autoProxy;
+  // Derive proxied or actual URL using silent fallback chain
+  const getStreamUrlForIndex = (url: string, index: number): string => {
+    const encoded = encodeURIComponent(url);
+    if (index === 1) {
+      return `https://corsproxy.io/?url=${encoded}`;
+    }
+    if (index === 2) {
+      return `https://api.allorigins.win/raw?url=${encoded}`;
+    }
+    return url;
+  };
 
-  // Derive proxied or actual URL
-  const streamUrl = (channel && activeProxy)
-    ? `https://corsproxy.io/?url=${encodeURIComponent(channel.url)}`
-    : (channel?.url || "");
+  const streamUrl = channel ? getStreamUrlForIndex(channel.url, proxyIndex) : "";
+  const activeProxy = proxyIndex > 0;
 
   // Reset custom toggle when channel changes
   useEffect(() => {
-    setProxyToggled(false);
+    if (!channel) return;
+    const isHttp = channel.url.startsWith("http://");
+    const isHttpsPage = window.location.protocol === "https:";
+    if (isHttp && isHttpsPage) {
+      setProxyIndex(1); // Start directly with CORS proxy to avoid mixed-content failure
+    } else {
+      setProxyIndex(0); // Start directly
+    }
     setErrorMsg(null);
   }, [channel]);
+
+  // Handle stream playback failure with silent next-proxy fallback
+  const handlePlaybackFailure = () => {
+    if (proxyIndex < 2) {
+      console.warn(`Stream playback failed at proxy index ${proxyIndex}. Escalating silently...`);
+      setIsLoading(true);
+      setErrorMsg(null);
+      setProxyIndex(prev => prev + 1);
+    } else {
+      console.error("Stream completely dead across all direct and CORS-proxied fallback tunnels.");
+      setIsLoading(false);
+      setErrorMsg(
+        "This channel is currently offline or unreachable. We attempted direct playback and silent secure proxies, but the host didn't respond."
+      );
+    }
+  };
 
   // Dynamic stream switching
   useEffect(() => {
@@ -83,26 +110,16 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.error("Fatal network error encountered:", data);
-              setIsLoading(false);
-              if (!activeProxy) {
-                setErrorMsg(
-                  "Stream failed to load due to CORS or secure web constraints (Mixed Content). Try enabling our built-in CORS Proxy toggle below, or install an 'Allow CORS' browser extension."
-                );
-              } else {
-                setErrorMsg(
-                  "Stream offline or blocked by remote host. Even with CORS proxy routing, this server is currently unreachable."
-                );
-              }
               hls?.destroy();
+              handlePlaybackFailure();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.warn("Fatal media error, attempting recovery...");
               hls?.recoverMediaError();
               break;
             default:
-              setIsLoading(false);
-              setErrorMsg("Unable to establish live stream feed. This channel is currently offline or unsupported.");
               hls?.destroy();
+              handlePlaybackFailure();
               break;
           }
         }
@@ -123,13 +140,7 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
 
       const onError = () => {
         setIsLoading(false);
-        if (!activeProxy) {
-          setErrorMsg(
-            "Stream rendering failed. This happens on Vercel/Cloud Run. Press 'Use CORS Proxy' to route securely."
-          );
-        } else {
-          setErrorMsg("Stream offline or blocked by remote host. Try installing an 'Allow CORS' browser extension.");
-        }
+        handlePlaybackFailure();
       };
 
       video.addEventListener("loadedmetadata", onLoadedMetadata);
@@ -195,20 +206,32 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
 
   const toggleFullscreen = () => {
     const container = containerRef.current;
+    const video = videoRef.current;
     if (!container) return;
 
     if (!isFullscreen) {
-      container.requestFullscreen().catch((err) => {
-        console.error("Error enabling fullscreen:", err);
-      });
+      if (container.requestFullscreen) {
+        container.requestFullscreen().catch((err) => {
+          console.error("Error enabling fullscreen:", err);
+        });
+      } else if (video && (video as any).webkitEnterFullscreen) {
+        // iOS Safari Native fullscreen support
+        (video as any).webkitEnterFullscreen();
+      }
     } else {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   };
 
   const handleRetry = () => {
     setErrorMsg(null);
     setIsLoading(true);
+    // Restart active check index sequence
+    const isHttp = channel?.url.startsWith("http://");
+    const isHttpsPage = window.location.protocol === "https:";
+    setProxyIndex(isHttp && isHttpsPage ? 1 : 0);
     setRetryCount(prev => prev + 1);
   };
 
@@ -267,7 +290,7 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
                 onClick={() => {
                   setErrorMsg(null);
                   setIsLoading(true);
-                  setProxyToggled(true);
+                  setProxyIndex(1);
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-semibold text-xs transition-all focus:outline-none cursor-pointer"
                 id="error-proxy-btn"
@@ -287,11 +310,11 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
           <div className="absolute top-0 left-0 right-0 p-4 bg-linear-to-b from-black/80 to-transparent flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
             <div className="flex items-center gap-3">
               <img 
-                src={channel.logo} 
+                src={channel.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=random&color=fff&size=256&bold=true`} 
                 alt={channel.name} 
                 className="w-10 h-10 rounded-lg object-contain bg-slate-950 p-1 border border-white/10 shadow-inner"
                 onError={(e) => {
-                  e.currentTarget.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(channel.name) + "&background=f43f5e&color=fff";
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=random&color=fff&size=256&bold=true`;
                 }}
               />
               <div>
@@ -363,7 +386,7 @@ export default function VideoPlayer({ channel }: VideoPlayerProps) {
                   onClick={() => {
                     setErrorMsg(null);
                     setIsLoading(true);
-                    setProxyToggled(!proxyToggled);
+                    setProxyIndex(prev => prev === 0 ? 1 : 0);
                   }}
                   className={`flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
                     activeProxy

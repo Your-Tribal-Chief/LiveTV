@@ -28,10 +28,26 @@ export default function App() {
       countsMap[channel.category] = (countsMap[channel.category] || 0) + 1;
     });
 
-    return Object.entries(countsMap).map(([name, count]) => ({
+    const categoriesList = Object.entries(countsMap).map(([name, count]) => ({
       name,
       count,
-    })).sort((a, b) => b.count - a.count); // sort by channel volume
+    }));
+
+    return categoriesList.sort((a, b) => {
+      const aLower = a.name.toLowerCase();
+      const bLower = b.name.toLowerCase();
+      const aIsFifa = aLower.startsWith("fifa world cup");
+      const bIsFifa = bLower.startsWith("fifa world cup");
+
+      if (aIsFifa && !bIsFifa) return -1;
+      if (!aIsFifa && bIsFifa) return 1;
+      if (aIsFifa && bIsFifa) {
+        return aLower.localeCompare(bLower, undefined, { numeric: true });
+      }
+
+      // Default sorting for other categories: count descending
+      return b.count - a.count;
+    });
   }, [channels]);
 
   // Filter channels based on selected category and direct search queries

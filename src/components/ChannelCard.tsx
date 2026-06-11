@@ -26,27 +26,32 @@ export default function ChannelCard({ channel, isActive, onSelect }: ChannelCard
   };
 
   return (
-    <div
+    <button
       onClick={() => onSelect(channel)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(channel);
+        }
+      }}
       id={`channel-card-${channel.id}`}
-      className={`relative group flex flex-col bg-gray-900/50 hover:bg-gray-800/60 backdrop-blur-md rounded-xl p-3 border border-white/5 hover:border-rose-500/30 shadow-lg cursor-pointer transition-all duration-300 transform select-none hover:-translate-y-1 active:scale-95 ${
-        isActive ? "ring-2 ring-rose-500/80 bg-rose-950/20 border-rose-500/50" : ""
+      tabIndex={0}
+      className={`relative group flex flex-col w-full text-left bg-gray-900/50 hover:bg-gray-800/60 backdrop-blur-md rounded-xl p-3 border border-white/5 hover:border-rose-500/30 shadow-lg cursor-pointer transition-all duration-300 transform select-none hover:-translate-y-1 active:scale-95 focus:ring-4 focus:outline-none focus:ring-blue-500 ${
+        isActive ? "ring-4 ring-rose-500/80 bg-rose-950/20 border-rose-500/50" : ""
       }`}
     >
       {/* Channel Logo Image Workspace */}
       <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-3 border border-white/5 flex items-center justify-center">
         {hasError ? (
-          <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${getGradientClass(channel.category)} p-2`}>
-            <div className="w-12 h-12 rounded-xl bg-black/40 border flex items-center justify-center text-2xl font-black shadow-lg uppercase">
-              {channel.name.charAt(0)}
-            </div>
-            <span className="text-[9px] uppercase tracking-widest text-white/50 font-bold mt-2">
-              {channel.name.slice(0, 15)}
-            </span>
-          </div>
+          <img
+            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=random&color=fff&size=256&bold=true`}
+            alt={channel.name}
+            className="w-full h-full object-contain p-2 max-h-[85%] transition-transform duration-500 group-hover:scale-110"
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <img
-            src={channel.logo}
+            src={channel.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.name)}&background=random&color=fff&size=256&bold=true`}
             alt={channel.name}
             className="w-full h-full object-contain p-2 max-h-[85%] transition-transform duration-500 group-hover:scale-110"
             onError={() => {
@@ -71,12 +76,12 @@ export default function ChannelCard({ channel, isActive, onSelect }: ChannelCard
       </div>
 
       {/* Channel metadata */}
-      <div className="flex items-start justify-between min-w-0">
+      <div className="flex items-start justify-between min-w-0 w-full">
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-white group-hover:text-rose-400 transition-colors truncate">
             {channel.name}
           </h4>
-          <span className="text-[11px] text-gray-500 block truncate mt-0.5">
+          <span className="text-[11px] text-gray-400 block truncate mt-0.5 group-hover:text-gray-300">
             {channel.url}
           </span>
         </div>
@@ -92,6 +97,6 @@ export default function ChannelCard({ channel, isActive, onSelect }: ChannelCard
           )}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

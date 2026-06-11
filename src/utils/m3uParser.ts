@@ -275,7 +275,7 @@ export function getSmartLogo(name: string, category: string): string {
 /**
  * Parses raw M3U text content and formats it into standard Channel JSON array
  */
-export function parseM3u(rawText: string): Channel[] {
+export function parseM3u(rawText: string, categoryOverride?: string): Channel[] {
   const lines = rawText.split("\n");
   const channels: Channel[] = [];
   let currentMetadata: { name: string; logo: string; groupTitle: string } | null = null;
@@ -294,22 +294,29 @@ export function parseM3u(rawText: string): Channel[] {
       let name = "Unknown Channel";
       if (commaIndex !== -1) {
         name = line.substring(commaIndex + 1).trim();
+      } else {
+        // Fallback if no comma but has something else
+        const parts = line.split(" ");
+        const lastPart = parts[parts.length - 1];
+        if (lastPart && !lastPart.includes("=")) {
+          name = lastPart.trim();
+        }
       }
 
       currentMetadata = {
-        name,
+        name: name || "Unknown Channel",
         logo: logoMatch ? logoMatch[1] : "",
         groupTitle: groupMatch ? groupMatch[1] : ""
       };
     } else if (line.startsWith("http://") || line.startsWith("https://")) {
       if (currentMetadata) {
-        const category = getAutoCategory(currentMetadata.name, currentMetadata.groupTitle);
-        const logo = currentMetadata.logo && currentMetadata.logo.startsWith("http")
-          ? currentMetadata.logo
-          : getSmartLogo(currentMetadata.name, category);
+        const category = categoryOverride || getAutoCategory(currentMetadata.name, currentMetadata.groupTitle);
+        const logo = currentMetadata.logo && currentMetadata.logo.trim().startsWith("http")
+          ? currentMetadata.logo.trim()
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentMetadata.name)}&background=random&color=fff&size=256&bold=true`;
 
         channels.push({
-          id: `${currentMetadata.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${channels.length}`,
+          id: `${currentMetadata.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${channels.length}-${Math.random().toString(36).substr(2, 5)}`,
           name: currentMetadata.name,
           url: line,
           category,
@@ -319,10 +326,10 @@ export function parseM3u(rawText: string): Channel[] {
       } else {
         // standalone URL with no metadata preceding it handles gracefully
         const name = `Channel ${channels.length + 1}`;
-        const category = getAutoCategory(name);
-        const logo = getSmartLogo(name, category);
+        const category = categoryOverride || getAutoCategory(name);
+        const logo = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=256&bold=true`;
         channels.push({
-          id: `channel-raw-${channels.length}`,
+          id: `channel-raw-${channels.length}-${Math.random().toString(36).substr(2, 5)}`,
           name,
           url: line,
           category,
