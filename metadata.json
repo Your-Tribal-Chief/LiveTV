@@ -1,0 +1,6 @@
+{
+  "name": "Live TV Streamer",
+  "description": "Premium modern streaming application built for personal TV channel compilation and streaming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
