@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Play, Tv } from "lucide-react";
 import { Channel } from "../types";
 
@@ -9,6 +10,21 @@ interface ChannelCardProps {
 }
 
 export default function ChannelCard({ channel, isActive, onSelect }: ChannelCardProps) {
+  const [hasError, setHasError] = useState(false);
+
+  // Derive elegant color gradients for fallbacks
+  const getGradientClass = (category: string) => {
+    switch (category) {
+      case "News": return "from-blue-600/30 to-slate-900/80 text-blue-400 border-blue-500/20";
+      case "Movies": return "from-purple-600/30 to-slate-900/80 text-purple-400 border-purple-500/20";
+      case "Kids": return "from-amber-500/30 to-slate-900/80 text-amber-400 border-amber-500/20";
+      case "Sports": return "from-emerald-600/30 to-slate-900/80 text-emerald-400 border-emerald-500/20";
+      case "Music": return "from-fuchsia-600/30 to-slate-900/80 text-fuchsia-400 border-fuchsia-500/20";
+      case "Bangla": return "from-rose-600/30 to-slate-900/80 text-rose-400 border-rose-500/20";
+      default: return "from-gray-700/30 to-slate-900/80 text-gray-400 border-gray-500/20";
+    }
+  };
+
   return (
     <div
       onClick={() => onSelect(channel)}
@@ -18,18 +34,28 @@ export default function ChannelCard({ channel, isActive, onSelect }: ChannelCard
       }`}
     >
       {/* Channel Logo Image Workspace */}
-      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-3 border border-white/5">
-        <img
-          src={channel.logo}
-          alt={channel.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          onError={(e) => {
-            // Unsplash logo replacement on broken src
-            e.currentTarget.src = "https://images.unsplash.com/photo-1598257006458-087169a1f08d?w=150&q=80";
-          }}
-          referrerPolicy="no-referrer"
-          loading="lazy"
-        />
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-3 border border-white/5 flex items-center justify-center">
+        {hasError ? (
+          <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br ${getGradientClass(channel.category)} p-2`}>
+            <div className="w-12 h-12 rounded-xl bg-black/40 border flex items-center justify-center text-2xl font-black shadow-lg uppercase">
+              {channel.name.charAt(0)}
+            </div>
+            <span className="text-[9px] uppercase tracking-widest text-white/50 font-bold mt-2">
+              {channel.name.slice(0, 15)}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={channel.logo}
+            alt={channel.name}
+            className="w-full h-full object-contain p-2 max-h-[85%] transition-transform duration-500 group-hover:scale-110"
+            onError={() => {
+              setHasError(true);
+            }}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+          />
+        )}
         
         {/* Play Icon Backdrop Overlay */}
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">

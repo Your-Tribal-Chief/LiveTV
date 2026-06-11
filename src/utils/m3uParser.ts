@@ -158,6 +158,121 @@ export function getFallbackLogo(category: string): string {
 }
 
 /**
+ * Smart automatic logo finder with dictionary matching popular channels
+ * and elegant text-to-graphics fallback (Method A & B)
+ */
+export function getSmartLogo(name: string, category: string): string {
+  const norm = name.toLowerCase().trim();
+
+  // Dictionary mapping for popular channels
+  const dictionary: Record<string, string> = {
+    "boishakhi": "https://upload.wikimedia.org/wikipedia/commons/d/df/Boishakhi_Television_logo.png",
+    "omtv tamil": "https://upload.wikimedia.org/wikipedia/commons/d/d3/TV9_Logo.png",
+    "ananda tv": "https://seeklogo.com/images/A/ananda-tv-logo-FB14D7FE1B-seeklogo.com.png",
+    "g-series": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/G-Series_logo.jpg/220px-G-Series_logo.jpg",
+    "jalsha movies": "https://upload.wikimedia.org/wikipedia/en/9/91/Jalsha_Movies_logo.png",
+    "aakash aath": "https://upload.wikimedia.org/wikipedia/en/a/ad/Aakash_Aath.png",
+    "jamuna tv": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Jamuna_TV_Logo.png",
+    "somoy tv": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Somoy_TV_logo.png",
+    "channel 24": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Channel_24_Logo.png",
+    "independent tv": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Independent_Television_logo.png",
+    "independent": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Independent_Television_logo.png",
+    "ekattor tv": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Ekattor_TV_Logo.png",
+    "atn news": "https://upload.wikimedia.org/wikipedia/commons/8/87/ATN_News_logo.png",
+    "news 24": "https://upload.wikimedia.org/wikipedia/commons/a/af/News_24_logo.png",
+    "btv": "https://upload.wikimedia.org/wikipedia/commons/d/df/Bangladesh_Television_logo.png",
+    "star news": "https://upload.wikimedia.org/wikipedia/commons/2/28/Star_News_Europe.png",
+    "deepto tv hd": "https://upload.wikimedia.org/wikipedia/commons/3/30/Deepto_tv_logo.png",
+    "deepto tv": "https://upload.wikimedia.org/wikipedia/commons/3/30/Deepto_tv_logo.png",
+    "sangsad tv": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Sangsad_Television_logo.png",
+    "sangsad": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Sangsad_Television_logo.png",
+    "bangla vision": "https://upload.wikimedia.org/wikipedia/commons/0/07/Banglavision_logo.png",
+    "banglavision": "https://upload.wikimedia.org/wikipedia/commons/0/07/Banglavision_logo.png",
+    "ntv": "https://upload.wikimedia.org/wikipedia/commons/c/cc/NTV_BD_Logo.png",
+    "ntv uk": "https://upload.wikimedia.org/wikipedia/commons/c/cc/NTV_BD_Logo.png",
+    "sa tv": "https://upload.wikimedia.org/wikipedia/commons/c/cb/SATV_Logo.png",
+    "al-jazeera": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Al_jazeera_red_logo.png",
+    "al jazeera": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Al_jazeera_red_logo.png",
+    "maasranga tv": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Maasranga_TV_Logo.png",
+    "maasranga": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Maasranga_TV_Logo.png",
+    "channel i": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Channel_i_logo.png",
+    "islamic tv": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Bangladesh_Television_logo.png/120px-Bangladesh_Television_logo.png",
+    "dbc news": "https://upload.wikimedia.org/wikipedia/commons/0/0f/DBC_News_Logo.png",
+    "channel 9": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Channel_9_Bangladesh_Logo.png",
+    "ekushey tv": "https://upload.wikimedia.org/wikipedia/commons/9/91/Ekushey_Television-Logo.png",
+    "ekushey": "https://upload.wikimedia.org/wikipedia/commons/9/91/Ekushey_Television-Logo.png",
+    "kolkata tv": "https://upload.wikimedia.org/wikipedia/commons/1/18/Kolkata_TV_Logo.png",
+    "tv9 bangla": "https://upload.wikimedia.org/wikipedia/commons/d/d3/TV9_Logo.png",
+    "r bangla": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Republic_Bangla_logo.png",
+    "republic bangla": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Republic_Bangla_logo.png",
+    "abp ananda": "https://upload.wikimedia.org/wikipedia/commons/f/fe/ABP_Ananda_logo.png",
+    "zee 24 ghanta": "https://upload.wikimedia.org/wikipedia/commons/1/17/Zee_24_Ghanta_Logo.png",
+    "zee anmol": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Zee_Anmol_logo.png",
+    "zee anmol tv": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Zee_Anmol_logo.png",
+    "zee anmol cinema": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Zee_Anmol_logo.png",
+    "zee news": "https://upload.wikimedia.org/wikipedia/commons/2/21/Zee_News_Logo.png",
+    "zee business": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Zee_Business.png",
+    "cartoon network": "https://upload.wikimedia.org/wikipedia/commons/8/80/Cartoon_Network_2011_logo.png",
+    "cartoon network hd": "https://upload.wikimedia.org/wikipedia/commons/8/80/Cartoon_Network_2011_logo.png",
+    "cartoon network sd": "https://upload.wikimedia.org/wikipedia/commons/8/80/Cartoon_Network_2011_logo.png",
+    "pogo": "https://upload.wikimedia.org/wikipedia/commons/d/da/Pogo_asia_logo.png",
+    "pogo sd": "https://upload.wikimedia.org/wikipedia/commons/d/da/Pogo_asia_logo.png",
+    "discovery kids": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Discovery_Kids_2016_logo.svg.png",
+    "duranta tv": "https://upload.wikimedia.org/wikipedia/commons/5/50/Duranta_TV_logo.png",
+    "hungama": "https://upload.wikimedia.org/wikipedia/en/1/10/Hungama_TV_Logo.png",
+    "nick": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Nickelodeon_2023_logo.png",
+    "nick jr": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Nickelodeon_Junior_logo_2023.png",
+    "sonic": "https://upload.wikimedia.org/wikipedia/en/9/9f/Nickelodeon_Sonic_logo.png",
+    "sony yay": "https://upload.wikimedia.org/wikipedia/en/2/29/Sony_YAY%21_Logo.png",
+    "sony yay vip": "https://upload.wikimedia.org/wikipedia/en/2/29/Sony_YAY%21_Logo.png",
+    "bal bharat": "https://upload.wikimedia.org/wikipedia/en/thumb/e/ef/Sony_YAY%21_Logo.png/220px-Sony_YAY%21_Logo.png",
+    "sky news": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Sky_News_logo_2022.svg.png",
+    "cnn": "https://upload.wikimedia.org/wikipedia/commons/b/b1/CNN.svg.png",
+    "dw": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Deutsche_Welle_logo_2012.svg.png",
+    "dw news": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Deutsche_Welle_logo_2012.svg.png",
+    "france 24": "https://upload.wikimedia.org/wikipedia/commons/d/d9/France_24_Logo.png",
+    "france 24 english": "https://upload.wikimedia.org/wikipedia/commons/d/d9/France_24_Logo.png",
+    "bloomberg": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Bloomberg_logo.svg.png",
+    "bloomberg tv": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Bloomberg_logo.svg.png",
+    "cnbc": "https://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg.png",
+    "abc news": "https://upload.wikimedia.org/wikipedia/commons/c/ca/ABC_News_logo_2021.svg.png",
+    "fox news": "https://upload.wikimedia.org/wikipedia/commons/6/67/Fox_News_Channel_logo.svg.png",
+    "nhk world": "https://upload.wikimedia.org/wikipedia/commons/8/8f/NHK_World_logo.svg.png",
+    "discovery": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Discovery_Channel_Logo_2019.png",
+    "discovery hd": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Discovery_Channel_Logo_2019.png",
+    "discovery bangla": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Discovery_Channel_Logo_2019.png",
+    "animal planet hd": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Animal_Planet_2018.svg.png",
+    "national geographic": "https://upload.wikimedia.org/wikipedia/commons/a/aa/National_Geographic_Corporate_Logo.png",
+    "nat geo hd": "https://upload.wikimedia.org/wikipedia/commons/a/aa/National_Geographic_Corporate_Logo.png",
+    "star movies": "https://upload.wikimedia.org/wikipedia/commons/0/07/Star_Movies_Asia_2017.png",
+  };
+
+  // Direct exact match
+  if (dictionary[norm]) return dictionary[norm];
+
+  // Try substring matching
+  for (const [key, val] of Object.entries(dictionary)) {
+    if (norm.includes(key)) return val;
+  }
+
+  // Fallback to Category default or elegant UI Avatars (Method B)
+  const colors = ["24408e", "f43f5e", "10b981", "f59e0b", "8b5cf6", "ec4899", "3b82f6"];
+  const charSum = Array.from(name).reduce((sum, c) => sum + c.charCodeAt(0), 0);
+  const color = colors[charSum % colors.length];
+
+  const cleanName = encodeURIComponent(
+    name
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .trim()
+      .split(" ")
+      .slice(0, 2)
+      .join(" ")
+  );
+
+  return `https://ui-avatars.com/api/?name=${cleanName || "TV"}&background=${color}&color=ffffff&size=256&bold=true&font-size=0.35&semibold=true`;
+}
+
+/**
  * Parses raw M3U text content and formats it into standard Channel JSON array
  */
 export function parseM3u(rawText: string): Channel[] {
@@ -189,7 +304,9 @@ export function parseM3u(rawText: string): Channel[] {
     } else if (line.startsWith("http://") || line.startsWith("https://")) {
       if (currentMetadata) {
         const category = getAutoCategory(currentMetadata.name, currentMetadata.groupTitle);
-        const logo = currentMetadata.logo || getFallbackLogo(category);
+        const logo = currentMetadata.logo && currentMetadata.logo.startsWith("http")
+          ? currentMetadata.logo
+          : getSmartLogo(currentMetadata.name, category);
 
         channels.push({
           id: `${currentMetadata.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-${channels.length}`,
@@ -203,7 +320,7 @@ export function parseM3u(rawText: string): Channel[] {
         // standalone URL with no metadata preceding it handles gracefully
         const name = `Channel ${channels.length + 1}`;
         const category = getAutoCategory(name);
-        const logo = getFallbackLogo(category);
+        const logo = getSmartLogo(name, category);
         channels.push({
           id: `channel-raw-${channels.length}`,
           name,
